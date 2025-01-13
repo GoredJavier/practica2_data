@@ -1,5 +1,5 @@
 ---
-title: "Práctica AE1"
+title: "Práctica AE2"
 author: "Grupo 1"
 date: "`r format(Sys.time(), '%d-%m-%Y')`"
 output: 
@@ -19,7 +19,7 @@ library(RCurl)
 
 # Autores
 
-**Práctica:** Actividad Evaluable 1  
+**Práctica:** Actividad Evaluable 2  
 **Asignatura:** Data Driven Security  
 **Fecha:** `r format(Sys.time(), '%d-%m-%Y')`  
 
@@ -32,11 +32,10 @@ library(RCurl)
 
 
 
-# 1. Data Science
+# Datos Elegantes + Análisis de Datos con Web Scrapping
 
 ## Pregunta 1
-
-De las siguientes preguntas, clasifica cada una como descriptiva, exploratoria, inferencia, predictiva o causal, y razona brevemente (una frase) el porqué:
+Se debe programar un programa de tipo web scrapping con el que podamos obtener una página web, mediante su URL, y poder analizar su contenido HTML con tal de extraer datos e información específica.
 
 1. Dado un registro de vehículos que circulan por una autopista, disponemos de su marca y modelo, país de matriculación, y tipo de vehículo (por número de ruedas). Con tal de ajustar precios de los peajes, ¿Cuántos vehículos tenemos por tipo? ¿Cuál es el tipo más frecuente? ¿De qué países tenemos más vehículos?
 
