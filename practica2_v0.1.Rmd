@@ -52,7 +52,20 @@ df <- data.frame(
   Tipo = character(179)
 )
 
-sapply(links_url)
+for (i in 1:nrow(df)) {
+  if (startsWith(df$Url[i], "/")) {
+    df$Tipo[i] = "R"
+  }
+  else if (startsWith(df$Url[i], "#")) {
+    df$Tipo[i] = "I"
+  }
+  else if (startsWith(df$Url[i], "https") || startsWith(df$Url[i], "http"))  {
+    df$Tipo[i] = "A"
+  }
+  else if (startsWith(df$Url[i], "//")) {
+    df$Tipo[i] = "S"
+  }
+}
 
 
 
