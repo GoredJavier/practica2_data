@@ -78,3 +78,18 @@ tabla_colores <- table(colores)
 print(tabla_colores)
 View(tabla_colores)
 
+A <- c(1,2,3,4,5)
+
+B <- c(6,7,8,9,10)
+
+C <- A + B
+
+print (A)
+plot(A[3])
+
+Tabla <- matrix(c(A,B), nrow = 5, ncol=2)
+print (Tabla)
+colnames(Tabla) <- c('NF','NK')
+Tabla
+data.frame(A,B)
+
