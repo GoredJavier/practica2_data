@@ -9,11 +9,16 @@ output:
     
 ---
 
-```{r carga_librerias, include=FALSE}
+```{r carga_librerias, include=FALSE, cache=TRUE}
 library(readr)
 library(stringr)
 library(swirl)
 library(RCurl)
+library(XML)
+library(httr)
+library(dplyr)
+library(ggplot2)
+library(ggpubr)
 
 ```
 
@@ -31,240 +36,120 @@ library(RCurl)
 |Mireia Náger Piazuelo| 
 
 
-
-# 1. Data Science
-
-## Pregunta 1
-
-De las siguientes preguntas, clasifica cada una como descriptiva, exploratoria, inferencia, predictiva o causal, y razona brevemente (una frase) el porqué:
-
-1. Dado un registro de vehículos que circulan por una autopista, disponemos de su marca y modelo, país de matriculación, y tipo de vehículo (por número de ruedas). Con tal de ajustar precios de los peajes, ¿Cuántos vehículos tenemos por tipo? ¿Cuál es el tipo más frecuente? ¿De qué países tenemos más vehículos?
-
-
-> **Respuesta 1:** Se considera que la primera pregunta es *descriptiva* dado que las preguntas hacen referencia al conjunto de datos inicial y se centran basicamente en un resumen de los datos observados. El origen de los datos es único - el registro de vehículos- y no es necesario que existan relaciones con otros conjuntos de datos para obtener la respuesta a las preguntas.
-
-2. Dado un registro de visualizaciones de un servicio de video-on-demand, donde disponemos de los datos del usuario, de la película seleccionada, fecha de visualización y categoría de la película, queremos saber ¿Hay alguna preferencia en cuanto a género literario según los usuarios y su rango de edad?
-
-> **Respuesta 2:** En este caso sería una pregunta *exploratoria* ya que se busca obtener información sobre los usuarios existentes en el conjunto de datos, sus características y las visualizaciones de películas que se han realizado; por lo tanto es necesario analizar y relacionar distintos conjuntos de datos que ya se tienen.  
-
-3. Dado un registro de peticiones a un sitio web, vemos que las peticiones que provienen de una red de telefonía concreta acostumbran a ser incorrectas y provocarnos errores de servicio. ¿Podemos determinar si en el futuro, los
-próximos mensajes de esa red seguirán dando problemas? ¿Hemos notado el mismo efecto en otras redes de telefonía?
-
-> **Respuesta 3:** La tercera pregunta se clasifica como *predictiva*, ya que busca anticipar un comportamiento futuro a partir de patrones observados en los datos actuales. Es decir, se intenta predecir un evento desconocido o no observado hasta el momento utilizando la información disponible en el conjunto de datos existente.(i.e. valor no visto).
-
-4. Dado los registros de usuarios de un servicio de compras por internet, los usuarios pueden agruparse por preferencias de productos comprados. Queremos saber si ¿Es posible que, dado un usuario al azar y según su historial, pueda ser directamente asignado a un o diversos grupos?
-
-> **Respuesta 4:** Este caso se considera una pregunta *inferencial* dado que partiendo de los datos de de los usuarios existentes (registros, compras realizadas, agrupación); se busca determinar la asignación de un nuevo usuario a uno o varios grupos. Aquí se asume que los datos existentes permiten inferir pertenencia a grupos, lo que implica un razonamiento estadístico o basado en modelos de clasificación. 
-
-
-## Pregunta 2
-
-Considerando el siguiente escenario:
-
-Sabemos que un usuario de nuestra red empresarial ha estado usando esta para fines no relacionados con el trabajo, como por ejemplo tener un servicio web no autorizado abierto a la red (otros usuarios tienen servicios web activados y autorizados). No queremos tener que rastrear los puertos de cada PC, y sabemos que la actividad puede haber cesado. Pero podemos acceder a los registros de conexiones TCP de cada máquina de cada trabajador (hacia donde abre conexión un PC concreto). Sabemos que nuestros clientes se conectan desde lugares remotos de forma legítima, como parte de nuestro negocio, y que un trabajador puede haber habilitado temporalmente servicios de prueba. Nuestro objetivo es reducir lo posible la lista de posibles culpables, con tal de explicarles que por favor no expongan nuestros sistemas sin permiso de los operadores o la dirección.
-
-
-> **Resumen del problema:** Publicación de un servicio web no autorizado en internet por parte un empleado.
-
-> **Conjuntos de datos:** registros de conexiones TPC de cada máquina, listado de servicios web autorizados, conexiones de clientes, servicios de prueba habilitados por trabajadores
-
-> **Análisis:** Se analiza el registro de conexiones TCP como base para identificar las conexiones entrantes para identificar aquellas no autorizadas. Los pasos que se siguen son:
-
-> 1. Se parte de todo el registro de conexiones TCP y se filtran solo las conexiones entrantes
-> 2. Se eliminan del listado las conexiones a IPs a servicios web autorizados por la empresa
-> 3. Se eliminan del listado las conexiones legitimas de clientes
-> 4. Con los datos resultantes, se miran varias opciones para analizar comportamientos anómalos:
-> - Se analizan conexiones fuera de horario
-> - Se analizan conexiones desde diferentes IPS ya que las pruebas normalmente vienen solo de una IP 
-> - Se analizan conexiones desde equipos que no hagan pruebas 
-  
-
-# 2. Introducción al R
+# 1. Datos elegantes + Análisis de datos con web scrapping
 
 ## Pregunta 1
 
-Una vez cargado el Dataset a analizar, comprobando que se cargan las IPs, el Timestamp, la Petición (Tipo, URL y Protocolo), Código de respuesta, y Bytes de reply.
+```{r descarga_pagina, include=FALSE}
+base_domain <- "https://www.mediawiki.org"
+html <- GET("https://www.mediawiki.org")
+content <- content(html, as = "text")
+parsedHtml <- htmlParse(content, asText = TRUE)
+print(parsedHtml)
+```
 
-1. Cuales son las dimensiones del dataset cargado (número de filas y columnas)
-2. Valor medio de la columna Bytes
 
-> Primero se carga el fichero epa_http.
+```{r extrae_contenido, include=FALSE}
+ title <- xpathSApply(parsedHtml, "//title", xmlValue)
+ texts <- xpathSApply(parsedHtml, "//p", xmlValue)
+ links_text <- xpathSApply(parsedHtml, "//a", xmlValue)
+ links_url  <- xpathSApply(parsedHtml, "//a", xmlGetAttr, 'href')
+```
 
-```{r carga_epa_http, warning=FALSE, cache=TRUE}
 
-git_epa_http <- getURL("https://raw.githubusercontent.com/GoredJavier/DataDrivenSecurity/refs/heads/main/epa-http.csv")
-epa_http <- read_table(git_epa_http, col_names = FALSE)
+```{r define_functions, include=FALSE}
 
-epa_http$X6 <- as.factor(epa_http$X6)
-epa_http$X7 <- as.numeric(epa_http$X7)
+categoria_url <- function(url) {
+  if (startsWith(url, "/")) {
+    return("R")
+  }
+  else if (startsWith(url, "#")) {
+    return("I")
+  }
+  else if (startsWith(url, "https") || startsWith(url, "http"))  {
+    return("A")
+  }
+  else if (startsWith(url, "//")) {
+    return("S")
+  }
+}
 
-epa_http$X2 <- as.POSIXct(gsub("^\\[|\\]$", "", epa_http$X2), format="%d:%H:%M:%S")
+convertir_absoluta <- function(url) {
+  if (startsWith(url, "/") || startsWith(url, "#") || startsWith(url, "//")) {
+    return(paste(base_domain, url, sep = ""))
+  }
+  else if (startsWith(url, "https") || startsWith(url, "http"))  {
+    return(url)
+  }
+}
+
+get_status <- function(url) {
+  html_head <- HEAD(convertir_absoluta(url))
+  return(html_head$status_code)
+
+}
 
 ```
 
-> Una vez ya se ha cargado el fichero, se pueden obtener las dimensiones utilizando los comandos ncol y nrow; o bien si se desea tener una visión general, se puede usar summary. 
 
-**Número de columnas:** 
-```{r, cache=TRUE}
-ncol(epa_http)
+```{r crea_df, include=FALSE}
+df <- data.frame(
+  text = links_text,
+  url_relativa = links_url,
+  url_absoluta = sapply(links_url, convertir_absoluta),
+  tipo_url = sapply(links_url, categoria_url),
+  status = sapply(links_url, get_status)
+)
 ```
 
-**Número de filas:** 
-```{r, cache=TRUE}
-nrow(epa_http)
+
+```{r count_repeated_urls, include=FALSE}
+table_df <- left_join(df, count(df, url_relativa), by = "url_relativa")
+
+table_df <- data.frame(
+  Enlace = unique(df$url_relativa),
+  Visto = count(df, url_relativa)
+)
+
+table_df <- left_join
+
+
+
 ```
 
-**Summary:** 
-```{r, cache=TRUE}
-summary(epa_http)
+```{r imprime_tabla}
+
+table_df <- table(df$url_relativa)
+
+table_df <- data.frame(
+  text = links_text,
+  url_relativa = links_url,
+  url_absoluta = sapply(links_url, convertir_absoluta),
+  tipo_url = sapply(links_url, categoria_url)
+)
 ```
 
+ggtexttable(
+  df,
+  rows = NULL
+)
+
+#table_df <- table(df$url_relativa)
+#ggplot(table(table_df))
+
+#tabledf <- table(df$url_relativa)
+#print(xtable(df))
+```
+
+
+
+```{r request, include=FALSE}
+#df$status <- sapply((df$url_absoluta), function(url) {
+#  resp_status(req_perform(request(url)))
+#})
+# df %>% ggplot(aes(x, y )) + geom_bars()
+
+
+```
 
 ## Pregunta 2
-
-De las diferentes IPs de origen accediendo al servidor, ¿cuantas pertenecen a una IP claramente educativa (que contenga ".edu")?
-
-> A continuación se muestra el número de IPs que contienen la cadena de carácteres ".edu", independientemente de si la cadena está al final de la url o en medio. 
-```{r, cache=TRUE}
-
-length(which(grepl(".edu", epa_http$X1, fixed=FALSE)))
-
-```
-
-
-## Pregunta 3
-
-De todas las peticiones recibidas por el servidor cual es la hora en la que hay mayor volumen de peticiones HTTP de tipo "GET"?
-
-> Para resolver este ejercicio primero filtramos las peticiones get y el campo hora de X2 (columna de tiempo); a continuación averiguamos cuantas horas diferentes hay en el listado y creamos una matriz con las horas. 
-
-```{r, cache=TRUE}
-
-get_df <- epa_http[grepl("GET", epa_http$X3), ]
-get_hours <- format(get_df$X2, '%H')
-unique_hours <- unique(get_hours)
-
-matrixHours <- matrix(0, ncol = 24, nrow = 1)
-colnames(matrixHours) <- c(unique_hours)
-
-print(matrixHours)
-
-```
-
-> Luego se itera por el listado de horas sumando 1 en la matriz cada vez que se pasa por una hora. 
-
-```{r, cache=TRUE}
-n_hours <- length(get_hours)
-
-# Iterar sobre las filas de get_df
-for (i in 1:n_hours) {
-   # Se suma 1 en la hora correspondiente
-   matrixHours[1,get_hours[i]] <- matrixHours[1,get_hours[i]] + 1
-}
-
-#Se imprime la matriz de horas completa
-print(matrixHours)
-
-```
-
-> Finalmente obtenemos que las "14" es la hora en la que hay más peticiones GET. 
-
-```{r, cache=TRUE}
-#Se imprime el número de peticiones máximo que aparece en la matriz
-print(max(matrixHours))
-
-#Se imprime la hora dónde se ha producido el número de peticiones máximo 
-print(colnames(matrixHours)[which(matrixHours==max(matrixHours))])
-
-```
-
-
-## Pregunta 4
-
-De las peticiones hechas por instituciones educativas (.edu), ¿Cuantos bytes en total se han transmitido, en peticiones de descarga de ficheros de texto ".txt"?
-
-> Para resolver este ejercicio se han buscado primero las peticiones hechas por instituciones educativas y luego sobre el subconjunto se filtran aquellos cuyo nombre acaba en .txt. Solo hay tres resultados. 
-
-```{r, cache=TRUE}
-edu_df <- epa_http[grepl(".edu", epa_http$X1), ]
-txt_df <- edu_df[grepl(".txt$", edu_df$X4), ]
-
-print(txt_df)
-```
-
-> Luego se suma el número de bits con una iteración.
-
-```{r, cache=TRUE}
-n_txt_df <- nrow(txt_df)
-
-# Inicializar el contador
-countBytes <- 0
-
-# Iterar sobre las filas de txt_df
-for (i in 1:n_txt_df) {
-  # Comprobar si el valor no es NA
-  if (!is.na(txt_df[i, 7])) {
-    # Sumar el valor de la columna 7
-    countBytes <- countBytes + txt_df[i, 7]
-  }
-}
-
-# Mostrar el resultado
-print(countBytes)
-
-```
-
-
-
-## Pregunta 5
-
-Si separamos la petición en 3 partes (Tipo, URL, Protocolo), usando str_split y el separador " " (espacio), ¿cuantas peticiones buscan directamente la URL = "/"?
-
-> Se usa una iteración para comprobar si la 4rta columna, que contiene la url, se corresponde con "/" y se cuentan las peticiones que cumplen dicha condición.
-
-```{r, cache=TRUE}
-
-n_epa_http <- nrow(epa_http)
-
-# Inicializar el contador
-countSlice <- 0
-
-# Iterar sobre las filas del dataframe
-for (i in 1:n_epa_http) {
-  # Comprobar si la cuarta columna contiene solo "/"
-  if (epa_http[i, 4] == '/') {
-    countSlice <- countSlice + 1  # Incrementar el contador
-  }
-}
-
-# Mostrar el resultado
-print(countSlice)
-
-```
-
-
-## Pregunta 6
-
-Aprovechando que hemos separado la petición en 3 partes (Tipo, URL, Protocolo) ¿Cuantas peticiones NO tienen como protocolo "HTTP/0.2"?
-
-> Con una iteración se comprueba si la 5a columna, que contiene el protocolo, NO se corresponde con "HTTP/0.2" y se cuentan las peticiones que cumplen dicha condición.
-
-
-```{r, cache=TRUE}
-
-n_epa_http <- nrow(epa_http)
-
-# Inicializar el contador
-countProto <- 0
-
-# Iterar sobre las filas del dataframe
-for (i in 1:n_epa_http) {
-  # Comprobar si la cuarta columna contiene solo "/"
-  if (epa_http[i, 5] != 'HTTP/0.2"') {
-    countProto <- countProto + 1  # Incrementar el contador
-  }
-}
-
-print(countProto)
-```
-
