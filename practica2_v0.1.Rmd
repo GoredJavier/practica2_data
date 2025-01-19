@@ -126,18 +126,23 @@ datatable(resumen_tabla)
 ```
 
 
-
-
 ## Pregunta 2
 
 ### 1. Tipos de Urls
 Histograma con la frecuencia de aparición de los enlaces, separando en URLs absolutas, relativas y subdominios.
 
+```{r parametros_comunes_graficos, include=FALSE}
+color_graficos <- "blue"
+```
+
 
 ```{r imprimir_histograma}
 
-#Se utiliza la función ggplot y geom_bar para mostrar un histográma con valores discretos
-ggplot(df,aes(tipo_url,tipo_url))+geom_bar(stat="identity",width=1)
+#Se muestran los valores totales de cada tipo de URL
+print(table(df$tipo_url))
+
+#Se utiliza la función ggplot y geom_bar para mostrar un histográma de valores discretos
+ggplot(df,aes(x=tipo_url))+geom_bar(width=0.9, fill=color_graficos, color=color_graficos) + labs (title = "Histograma con la frecuencia de enlaces", x = "Tipo de URL", y="Cantidad") + geom_text(stat = "count", aes(label=after_stat(count)),vjust=-0.5)
 
 ```
 
@@ -152,7 +157,7 @@ v_urls <- c(length(which(grepl("https://www.mediawiki.org", df$url_absoluta, fix
 bar_names <- c("Urls mediawiki", "Otras urls") 
 
 #Se utiliza la función barplot para mostrar el gráfico de barras
-barplot(height = v_urls, names.arg=bar_names,col = "skyblue", main = "Tipos de URLs")
+barplot(height = v_urls, names.arg=bar_names,col = color_graficos, main = "Tipos de URLs")
 
 ```
 
@@ -164,10 +169,10 @@ Gráfico de tarta indicando los porcentajes de Status del análisis
 total_estados = length(df$estado)
 tipos_estados <- c("200","404")
 
-valores_pie <- c(length(which(grepl("200", df$estado,fixed=FALSE)))/total_estados,
+porcentajes_pie <- c(length(which(grepl("200", df$estado,fixed=FALSE)))/total_estados,
                  length(which(grepl("404", df$estado, fixed=FALSE)))/total_estados)
 
-pie(valores_pie, labels = tipos_estados, col="skyblue", main="Porcentaje de Status")
+pie(porcentajes_pie, labels = tipos_estados, col=color_graficos, main="Porcentaje de Status")
 
 
 ```
