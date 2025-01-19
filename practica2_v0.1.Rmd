@@ -1,5 +1,6 @@
+
 ---
-title: "Práctica AE1FPV"
+title: "Práctica AE1"
 author: "Grupo 1"
 date: "`r format(Sys.time(), '%d-%m-%Y')`"
 output: 
@@ -16,7 +17,7 @@ library(swirl)
 library(RCurl)
 library(XML)
 library(httr)
-library(GET)
+library(dplyr)
 
 ```
 
@@ -35,61 +36,98 @@ library(GET)
 
 
 
-# 1. Data Science
-
-## Pregunta 1
-
-De las siguientes preguntas, clasifica cada una como descriptiva, exploratoria, inferencia, predictiva o causal, y razona brevemente (una frase) el porqué:
-
+```{r descarga_pagina, include=FALSE}
+base_domain <- "https://www.mediawiki.org"
 html <- GET("https://www.mediawiki.org")
 content <- content(html, as = "text")
 parsedHtml <- htmlParse(content, asText = TRUE)
-
 print(parsedHtml)
+```
 
+
+```{r extrae_contenido, include=FALSE}
  title <- xpathSApply(parsedHtml, "//title", xmlValue)
  texts <- xpathSApply(parsedHtml, "//p", xmlValue)
  links_text <- xpathSApply(parsedHtml, "//a", xmlValue)
  links_url  <- xpathSApply(parsedHtml, "//a", xmlGetAttr, 'href')
- 
+```
+
+
+```{r crea_df, include=FALSE}
 df <- data.frame(
   Text = links_text,
   Url = links_url,
-  Tipo = character(179)
+  Url_completa = character(187),
+  Tipo = character(187)
 )
-
-sapply(links_url)
-
+```
 
 
-dataframe <- cbind(links_text, links_url, 0)
+```{r define_functions, include=FALSE}
+for (i in 1:nrow(df)) {
+  if (startsWith(df$Url[i], "/")) {
+    df$Tipo[i] = "R"
+    df$Url_completa[i] = paste("https://www.mediawiki.org", df$Url[i])
+  }
+  else if (startsWith(df$Url[i], "#")) {
+    df$Tipo[i] = "I"
+  }
+  else if (startsWith(df$Url[i], "https") || startsWith(df$Url[i], "http"))  {
+    df$Tipo[i] = "A"
+  }
+  else if (startsWith(df$Url[i], "//")) {
+    df$Tipo[i] = "S"
+    df$Url_completa = paste("https:", df$Url[i])
+  }
+}
+categoria_url <- function(url) {
+  if (startsWith(url, "/")) {
+    return("R")
+  }
+  else if (startsWith(url, "#")) {
+    return("I")
+  }
+  else if (startsWith(url, "https") || startsWith(url, "http"))  {
+    return("A")
+  }
+  else if (startsWith(url, "//")) {
+    return("S")
+  }
+}
 
- images_url <- xpathSApply(parsedHtml, "//img", xmlGetAttr, 'src')
+convertir_absoluta <- function(url) {
+  if (startsWith(url, "/") || startsWith(url, "#") || startsWith(url, "//")) {
+    return(paste(base_domain, url, sep = ""))
+  }
+  
+  else if (startsWith(url, "https") || startsWith(url, "http"))  {
+    return(url)
+  }
+}
+```
+
+
+```{r count_repeated_urls, include=FALSE}
+df$url_absoluta <- sapply(df$Url, convertir_absoluta)
+df$tipo_url <- sapply(df$Url, categoria_url)
+df_count <- count(df, url_absoluta)
+df <- left_join(df, df_count, by = "url_absoluta")
+```
 
 
 
-# Crear un vector categórico
-colores <- c("Rojo", "Azul", "Verde", "Rojo", "Azul", "Rojo")
 
-# Crear una tabla de frecuencias
-tabla_colores <- table(colores)
+```{r request, include=FALSE}
+df$status <- sapply((df$url_absoluta), function(url) {
+  resp_status(req_perform(request(url)))
+})
+```
+#Grafica 
+```{r}
+df %>% ggplot(aes(x, y )) + geom_bar()
+```
 
-# Mostrar la tabla
-print(tabla_colores)
-View(tabla_colores)
 
-A <- c(1,2,3,4,5)
 
-B <- c(6,7,8,9,10)
 
-C <- A + B
-
-print (A)
-plot(A[3])
-
-Tabla <- matrix(c(A,B), nrow = 5, ncol=2)
-print (Tabla)
-colnames(Tabla) <- c('NF','NK')
-Tabla
-data.frame(A,B)
 
