@@ -40,7 +40,7 @@ library(ggpubr)
 
 ## Pregunta 1
 
-```{r descarga_pagina, include=FALSE, cache=TRUE}
+```{r descarga_pagina, include=FALSE,cache=TRUE}
 base_domain <- "https://www.mediawiki.org"
 html <- GET("https://www.mediawiki.org")
 content <- content(html, as = "text")
@@ -57,25 +57,28 @@ print(parsedHtml)
 ```
 
 
-```{r define_functions, include=FALSE, cache=TRUE}
+```{r define_functions, include=FALSE}
 
 categoria_url <- function(url) {
-  if (startsWith(url, "/")) {
-    return("R")
+  if (startsWith(url, "//")) {
+    return("Subdominio")
+  }
+  else if (startsWith(url, "/")) {
+    return("Relativa")
   }
   else if (startsWith(url, "#")) {
-    return("I")
+    return("Relativa")
   }
   else if (startsWith(url, "https") || startsWith(url, "http"))  {
-    return("A")
-  }
-  else if (startsWith(url, "//")) {
-    return("S")
+    return("Absoluta")
   }
 }
 
 convertir_absoluta <- function(url) {
-  if (startsWith(url, "/") || startsWith(url, "#") || startsWith(url, "//")) {
+  if (startsWith(url, "//"))  {
+    return(paste("https:", url, sep = ""))
+  }
+  else if (startsWith(url, "/") || startsWith(url, "#")) {
     return(paste(base_domain, url, sep = ""))
   }
   else if (startsWith(url, "https") || startsWith(url, "http"))  {
@@ -92,7 +95,7 @@ get_status <- function(url) {
 ```
 
 
-```{r crea_df, include=FALSE}
+```{r crea_df, include=FALSE, cache=TRUE}
 df <- data.frame(
   url_relativa = links_url,
   texto = links_text,
@@ -106,60 +109,63 @@ df <- left_join(df, count(df, url_relativa), by = "url_relativa")
 ```
 
 
-```{r imprimir_tabla}
-table_df <- data.frame(
-  Enlace = df$url_relativa,
-  Texto = df$texto,
-  Visto = df$n,
-  Estado = df$estado
-)
-
-ggtab <- ggtexttable(table_df, cols = colnames(table_df),theme = ttheme())
-
-#ttheme(
-#  base_style = "default",
-#  base_size = 11,
-#  base_colour = "black",
-#  padding = unit(c(4, 4), "mm"),
-#  colnames.style = colnames_style(size = base_size),
-#  rownames.style = rownames_style(size = base_size),
-#  tbody.style = tbody_style(size = base_size)
-#)
-
-print(ggtab)
-
-```
-
 ```{r imprime_tabla}
-
-#table_df <- table(df$url_relativa)
-
-#table_df <- data.frame
-#  text = links_text,
-#  url_relativa = links_url,
-#  url_absoluta = sapply(links_url, convertir_absoluta),
-#  tipo_url = sapply(links_url, categoria_url)
+#table_df <- data.frame(
+#  Enlace = df$url_relativa,
+#  Texto = df$texto,
+#  Visto = df$n,
+#  Estado = df$estado
 #)
-```
 
-print(ggtexttable(df,rows = NULL))
+#ggtab <- ggtexttable(table_df, cols = colnames(table_df))
 
-#table_df <- table(df$url_relativa)
-#ggplot(table(table_df))
-
-#tabledf <- table(df$url_relativa)
-#print(xtable(df))
-```
-
-
-
-```{r request, include=FALSE}
-#df$status <- sapply((df$url_absoluta), function(url) {
-#  resp_status(req_perform(request(url)))
-#})
-# df %>% ggplot(aes(x, y )) + geom_bars()
-
+#print(ggtab)
 
 ```
+
+
+
 
 ## Pregunta 2
+
+### 1. Tipos de Urls
+Histograma con la frecuencia de aparición de los enlaces, separando en URLs absolutas, relativas y subdominios.
+
+
+```{r imprimir_histograma}
+
+#Se utiliza la función ggplot y geom_bar para mostrar un histográma con valores discretos
+ggplot(df,aes(tipo_url,tipo_url))+geom_bar(stat="identity",width=1)
+
+```
+
+### 2. Dominios mediawiki
+Gráfico de barras que indica la suma de enlaces que apuntan a otros dominios o servicios (distinto a https://www.mediawiki.org) vs. la suma de otros enlaces. 
+
+```{r imprimir_barplot}
+
+#Se calculan las ocurrencias de urls a mediawiki y a otras urls 
+v_urls <- c(length(which(grepl("https://www.mediawiki.org", df$url_absoluta, fixed=FALSE))),length(which(!grepl("https://www.mediawiki.org", df$url_absoluta, fixed=FALSE))))
+
+bar_names <- c("Urls mediawiki", "Otras urls") 
+
+#Se utiliza la función barplot para mostrar el gráfico de barras
+barplot(height = v_urls, names.arg=bar_names,col = "skyblue", main = "Tipos de URLs")
+
+```
+
+### 3. Porcentajes de status 
+Gráfico de tarta indicando los porcentajes de Status del análisis 
+
+```{r imprimir_piechart}
+
+total_estados = length(df$estado)
+tipos_estados <- c("200","404")
+
+valores_pie <- c(length(which(grepl("200", df$estado,fixed=FALSE)))/total_estados,
+                 length(which(grepl("404", df$estado, fixed=FALSE)))/total_estados)
+
+pie(valores_pie, labels = tipos_estados, col="skyblue", main="Porcentaje de Status")
+
+
+```
