@@ -9,7 +9,7 @@ output:
     
 ---
 
-```{r carga_librerias, include=FALSE, cache=TRUE}
+```{r carga_librerias, include=FALSE}
 library(readr)
 library(stringr)
 library(swirl)
@@ -40,7 +40,7 @@ library(ggpubr)
 
 ## Pregunta 1
 
-```{r descarga_pagina, include=FALSE}
+```{r descarga_pagina, include=FALSE, cache=TRUE}
 base_domain <- "https://www.mediawiki.org"
 html <- GET("https://www.mediawiki.org")
 content <- content(html, as = "text")
@@ -49,7 +49,7 @@ print(parsedHtml)
 ```
 
 
-```{r extrae_contenido, include=FALSE}
+```{r extrae_contenido, include=FALSE, cache=TRUE}
  title <- xpathSApply(parsedHtml, "//title", xmlValue)
  texts <- xpathSApply(parsedHtml, "//p", xmlValue)
  links_text <- xpathSApply(parsedHtml, "//a", xmlValue)
@@ -57,7 +57,7 @@ print(parsedHtml)
 ```
 
 
-```{r define_functions, include=FALSE}
+```{r define_functions, include=FALSE, cache=TRUE}
 
 categoria_url <- function(url) {
   if (startsWith(url, "/")) {
@@ -94,45 +94,55 @@ get_status <- function(url) {
 
 ```{r crea_df, include=FALSE}
 df <- data.frame(
-  text = links_text,
   url_relativa = links_url,
+  texto = links_text,
   url_absoluta = sapply(links_url, convertir_absoluta),
   tipo_url = sapply(links_url, categoria_url),
-  status = sapply(links_url, get_status)
+  estado = sapply(links_url, get_status)
 )
+df <- left_join(df, count(df, url_relativa), by = "url_relativa")
+
+
 ```
 
 
-```{r count_repeated_urls, include=FALSE}
-table_df <- left_join(df, count(df, url_relativa), by = "url_relativa")
-
+```{r imprimir_tabla}
 table_df <- data.frame(
-  Enlace = unique(df$url_relativa),
-  Visto = count(df, url_relativa)
+  Enlace = df$url_relativa,
+  Texto = df$texto,
+  Visto = df$n,
+  Estado = df$estado
 )
 
-table_df <- left_join
+ggtab <- ggtexttable(table_df, cols = colnames(table_df),theme = ttheme())
 
+#ttheme(
+#  base_style = "default",
+#  base_size = 11,
+#  base_colour = "black",
+#  padding = unit(c(4, 4), "mm"),
+#  colnames.style = colnames_style(size = base_size),
+#  rownames.style = rownames_style(size = base_size),
+#  tbody.style = tbody_style(size = base_size)
+#)
 
+print(ggtab)
 
 ```
 
 ```{r imprime_tabla}
 
-table_df <- table(df$url_relativa)
+#table_df <- table(df$url_relativa)
 
-table_df <- data.frame(
-  text = links_text,
-  url_relativa = links_url,
-  url_absoluta = sapply(links_url, convertir_absoluta),
-  tipo_url = sapply(links_url, categoria_url)
-)
+#table_df <- data.frame
+#  text = links_text,
+#  url_relativa = links_url,
+#  url_absoluta = sapply(links_url, convertir_absoluta),
+#  tipo_url = sapply(links_url, categoria_url)
+#)
 ```
 
-ggtexttable(
-  df,
-  rows = NULL
-)
+print(ggtexttable(df,rows = NULL))
 
 #table_df <- table(df$url_relativa)
 #ggplot(table(table_df))
