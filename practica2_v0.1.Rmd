@@ -19,6 +19,7 @@ library(httr)
 library(dplyr)
 library(ggplot2)
 library(ggpubr)
+library(DT)
 
 ```
 
@@ -109,17 +110,18 @@ df <- left_join(df, count(df, url_relativa), by = "url_relativa")
 ```
 
 
-```{r imprime_tabla}
-#table_df <- data.frame(
-#  Enlace = df$url_relativa,
-#  Texto = df$texto,
-#  Visto = df$n,
-#  Estado = df$estado
-#)
+```{r imprime_tabla_resumen }
 
-#ggtab <- ggtexttable(table_df, cols = colnames(table_df))
+resumen_title <- c("Cabcera: ", title)
+resumen_tabla <- data.frame(
+  Enlace = df$url_relativa,
+  Texto = df$texto,
+  Visto = df$n,
+  Estado = df$estado
+)
 
-#print(ggtab)
+print(paste("Cabecera: ",title))
+datatable(resumen_tabla)
 
 ```
 
