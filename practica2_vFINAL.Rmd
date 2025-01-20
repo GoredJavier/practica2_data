@@ -21,6 +21,7 @@ library(ggplot2)
 library(ggpubr)
 library(DT)
 
+
 ```
 
 # Autores
@@ -119,7 +120,7 @@ df <- left_join(df, count(df, url_relativa), by = "url_relativa")
 
 
 ```
-5. A continuación se muestra la información del título:
+5. Se muestra la información del título:
 
 ```{r imprime_titulo }
 
@@ -127,7 +128,8 @@ print(paste("Cabecera: ",title))
 
 ```
 
-6. A continuación se muestra la tabla resumen con los datos según indicado en el ejercicio; cabe destacar que el dataframe de trabajo contiene información adicional.
+6. Se muestra la tabla resumen con los datos según indicado en el ejercicio y con la libreria DT; cabe destacar que el dataframe de trabajo contiene información adicional.
+
 
 ```{r imprime_tabla_resumen }
 
