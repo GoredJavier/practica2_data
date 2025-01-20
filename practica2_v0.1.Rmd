@@ -37,20 +37,12 @@ library(DT)
 |Mireia Náger Piazuelo| 
 
 
-<<<<<<< HEAD
-
-# Datos Elegantes + Análisis de Datos con Web Scrapping
-
-## Pregunta 1
-Se debe programar un programa de tipo web scrapping con el que podamos obtener una página web, mediante su URL, y poder analizar su contenido HTML con tal de extraer datos e información específica.
-=======
 # 1. Datos elegantes + Análisis de datos con web scrapping
 
 ## Pregunta 1
 Para poder obtener los datos a mostrar en la tabla y las gráficas se siguen los pasos descritos a continuación.
 
 1. Se descarga la página web y se parsea.
->>>>>>> origin/development/mireia
 
 ```{r descarga_pagina, cache=TRUE}
 base_domain <- "https://www.mediawiki.org"
