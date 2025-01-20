@@ -159,7 +159,7 @@ color_graficos <- "blue"
 #Se muestran los valores totales de cada tipo de URL
 print(table(df$tipo_url))
 
-#Se utiliza la función ggplot y geom_bar para mostrar un histográma de valores discretos
+#Se utiliza la función ggplot y geom_bar para mostrar un histograma de valores discretos
 ggplot(df,aes(x=tipo_url))+geom_bar(width=0.9, fill=color_graficos, color=color_graficos) + labs (title = "Histograma con la frecuencia de enlaces", x = "Tipo de URL", y="Cantidad") + geom_text(stat = "count", aes(label=after_stat(count)),vjust=-0.5)
 
 ```
@@ -169,22 +169,14 @@ Gráfico de barras que indica la suma de enlaces que apuntan a otros dominios o 
 
 ```{r imprimir_barplot}
 
-#Se calculan las ocurrencias de urls a mediawiki y a otras urls 
-v_urls <- c(length(which(grepl("https://www.mediawiki.org", df$url_absoluta, fixed=FALSE))),length(which(!grepl("https://www.mediawiki.org", df$url_absoluta, fixed=FALSE))))
-print(v_urls)
-
-bar_names <- c("Urls mediawiki", "Otras urls") 
-
-#Se utiliza la función barplot para mostrar el gráfico de barras
-barplot(height = v_urls, names.arg=bar_names,col = color_graficos, main = "Tipos de URLs")
-
-
+#Se calculan las ocurrencias de urls a mediawiki y a otras urls
 v_urls2 <- data.frame(
   categoria = c("Urls mediawiki", "Otras urls"),
   valor = c(length(which(grepl("https://www.mediawiki.org", df$url_absoluta,fixed=FALSE))),length(which(!grepl("https://www.mediawiki.org", df$url_absoluta, fixed=FALSE))))
 )
 
-ggplot(v_urls2, aes(x = categoria, y = valor))+geom_col(width=0.9, fill=color_graficos, color=color_graficos) + labs (title = "Gráfico de barras con las ocurrencias de Mediawiki y otros", x = "Tipo", y="Cantidad") 
+#Se utiliza la función geom_col para mostrar el gráfico de barras
+ggplot(v_urls2, aes(x = categoria, y = valor))+geom_col(width=0.9, fill=color_graficos, color=color_graficos) + labs (title = "Gráfico de barras con las ocurrencias de Mediawiki y otros", x = "Tipo", y="Cantidad") + geom_text(aes(label=valor),vjust=-0.5)
 
 ```
 
@@ -193,34 +185,22 @@ Gráfico de tarta indicando los porcentajes de Status del análisis.
 
 ```{r imprimir_piechart}
 
-total_estados = length(df$estado)
-tipos_estados <- c("200","404")
-
-porcentajes_pie <- c(length(which(grepl("200", df$estado,fixed=FALSE)))/total_estados,
-                 length(which(grepl("404", df$estado, fixed=FALSE)))/total_estados)
-
-pie(porcentajes_pie, labels = tipos_estados, col=color_graficos, main="Porcentaje de Status")
-
-
-```
-
-```{r version con ggplot}
-
+#Se calculan los porcentajes según el estado
 total_estados <- length(df$estado)
 df_estados <- as.data.frame(table(df$estado))
 colnames(df_estados) <- c("Estado", "Contador")
-df_estados$Porcentaje <- df_estados$Contador/total_estados*100
+df_estados$Porcentaje <- round(df_estados$Contador/total_estados*100,2)
 
 #df_estados$Colores <- rainbow(length(unique(df$estado)))
 
 
 print(df_estados)
 
-# Graficar el pie chart con ggplot2
+# Se muestra el pie chart con ggplot2
 ggplot(df_estados, aes(x = "", y = Porcentaje, fill = Estado)) +
   geom_bar(stat = "identity", width = 0.9) +
   coord_polar(theta = "y") +
-  labs(title = "Porcentaje de Status", fill = "Estado")
+  labs(title = "Porcentaje de Status", fill = "Estado") + geom_text(aes(label=Porcentaje), position = position_stack(vjust = 0.5))
 
 
 ```
