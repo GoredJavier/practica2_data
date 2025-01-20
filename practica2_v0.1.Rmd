@@ -40,17 +40,21 @@ library(DT)
 # 1. Datos elegantes + Análisis de datos con web scrapping
 
 ## Pregunta 1
+Para poder obtener los datos a mostrar en la tabla y las gráficas se siguen los pasos descritos a continuación.
 
-```{r descarga_pagina, include=FALSE,cache=TRUE}
+1. Se descarga la página web y se parsea.
+
+```{r descarga_pagina, cache=TRUE}
 base_domain <- "https://www.mediawiki.org"
 html <- GET("https://www.mediawiki.org")
 content <- content(html, as = "text")
 parsedHtml <- htmlParse(content, asText = TRUE)
-print(parsedHtml)
+
 ```
 
+2. A continuación se obtienen los valores relevantes para el ejercicio: el título, Se descarga la página web y se parsea.
 
-```{r extrae_contenido, include=FALSE, cache=TRUE}
+```{r extrae_contenido, cache=TRUE}
  title <- xpathSApply(parsedHtml, "//title", xmlValue)
  texts <- xpathSApply(parsedHtml, "//p", xmlValue)
  links_text <- xpathSApply(parsedHtml, "//a", xmlValue)
@@ -58,8 +62,12 @@ print(parsedHtml)
 ```
 
 
-```{r define_functions, include=FALSE}
+3. Se definen varias funciones para la clasificación de las urls, estas funciones se usarán para poblar el dataframe.
+```{r define_functions}
 
+#Función que permite categorizar una url en Subdominio, Absoluta o Relativa. Se debe tener en cuenta: 
+#    1. Es importante realizar primero la comprobación de los subdominios para que éstos no se clasifiquen como urls relativas.  
+#    2. Se consideran las urls locales como relativas.
 categoria_url <- function(url) {
   if (startsWith(url, "//")) {
     return("Subdominio")
@@ -75,6 +83,7 @@ categoria_url <- function(url) {
   }
 }
 
+#Función que devuelve la url absoluta a partir de los datos de entrada.
 convertir_absoluta <- function(url) {
   if (startsWith(url, "//"))  {
     return(paste("https:", url, sep = ""))
@@ -87,6 +96,7 @@ convertir_absoluta <- function(url) {
   }
 }
 
+#Función que devuelve el estado de la respuesta de una url.
 get_status <- function(url) {
   html_head <- HEAD(convertir_absoluta(url))
   return(html_head$status_code)
@@ -95,8 +105,9 @@ get_status <- function(url) {
 
 ```
 
+4. A continuación se crea el df a partir de los datos y las funciones que se han preparado previamente, llamando a las funciones con sapply. Es importante mencionar que este pedazo de código tarda bastante en ejecutarse por lo que se ha activado la cache. 
 
-```{r crea_df, include=FALSE, cache=TRUE}
+```{r crea_df, cache=TRUE}
 df <- data.frame(
   url_relativa = links_url,
   texto = links_text,
@@ -108,7 +119,15 @@ df <- left_join(df, count(df, url_relativa), by = "url_relativa")
 
 
 ```
+5. A continuación se muestra la información del título:
 
+```{r imprime_titulo }
+
+print(paste("Cabecera: ",title))
+
+```
+
+6. A continuación se muestra la tabla resumen con los datos según indicado en el ejercicio; cabe destacar que el dataframe de trabajo contiene información adicional.
 
 ```{r imprime_tabla_resumen }
 
@@ -120,7 +139,6 @@ resumen_tabla <- data.frame(
   Estado = df$estado
 )
 
-print(paste("Cabecera: ",title))
 datatable(resumen_tabla)
 
 ```
@@ -153,16 +171,25 @@ Gráfico de barras que indica la suma de enlaces que apuntan a otros dominios o 
 
 #Se calculan las ocurrencias de urls a mediawiki y a otras urls 
 v_urls <- c(length(which(grepl("https://www.mediawiki.org", df$url_absoluta, fixed=FALSE))),length(which(!grepl("https://www.mediawiki.org", df$url_absoluta, fixed=FALSE))))
+print(v_urls)
 
 bar_names <- c("Urls mediawiki", "Otras urls") 
 
 #Se utiliza la función barplot para mostrar el gráfico de barras
 barplot(height = v_urls, names.arg=bar_names,col = color_graficos, main = "Tipos de URLs")
 
+
+v_urls2 <- data.frame(
+  categoria = c("Urls mediawiki", "Otras urls"),
+  valor = c(length(which(grepl("https://www.mediawiki.org", df$url_absoluta,fixed=FALSE))),length(which(!grepl("https://www.mediawiki.org", df$url_absoluta, fixed=FALSE))))
+)
+
+ggplot(v_urls2, aes(x = categoria, y = valor))+geom_col(width=0.9, fill=color_graficos, color=color_graficos) + labs (title = "Gráfico de barras con las ocurrencias de Mediawiki y otros", x = "Tipo", y="Cantidad") 
+
 ```
 
 ### 3. Porcentajes de status 
-Gráfico de tarta indicando los porcentajes de Status del análisis 
+Gráfico de tarta indicando los porcentajes de Status del análisis. 
 
 ```{r imprimir_piechart}
 
@@ -173,6 +200,27 @@ porcentajes_pie <- c(length(which(grepl("200", df$estado,fixed=FALSE)))/total_es
                  length(which(grepl("404", df$estado, fixed=FALSE)))/total_estados)
 
 pie(porcentajes_pie, labels = tipos_estados, col=color_graficos, main="Porcentaje de Status")
+
+
+```
+
+```{r version con ggplot}
+
+total_estados <- length(df$estado)
+df_estados <- as.data.frame(table(df$estado))
+colnames(df_estados) <- c("Estado", "Contador")
+df_estados$Porcentaje <- df_estados$Contador/total_estados*100
+
+#df_estados$Colores <- rainbow(length(unique(df$estado)))
+
+
+print(df_estados)
+
+# Graficar el pie chart con ggplot2
+ggplot(df_estados, aes(x = "", y = Porcentaje, fill = Estado)) +
+  geom_bar(stat = "identity", width = 0.9) +
+  coord_polar(theta = "y") +
+  labs(title = "Porcentaje de Status", fill = "Estado")
 
 
 ```
